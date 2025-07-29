@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 import Swal from "sweetalert2"
-import { getGitHubFile, updateGitHubFile } from "../lib/github" // Import GitHub utility
+import { getGitHubFile, updateGitHubFile } from "../lib/github"
 
 function Chat() {
   const [message, setMessage] = useState("")
@@ -11,6 +11,7 @@ function Chat() {
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
   const [userIp, setUserIp] = useState("")
   const [messageCount, setMessageCount] = useState(0)
+  const [isSending, setIsSending] = useState(false) // State untuk menunjukkan pengiriman pesan
 
   const messagesEndRef = useRef(null)
 
@@ -29,6 +30,7 @@ function Chat() {
   }
 
   const fetchMessages = async () => {
+    console.log("Fetching chat messages...")
     try {
       const { content } = await getGitHubFile(CHATS_FILE_PATH)
       const parsedMessages = JSON.parse(content)
@@ -36,9 +38,18 @@ function Chat() {
       if (shouldScrollToBottom) {
         scrollToBottom()
       }
+      console.log("Chat messages fetched successfully:", parsedMessages.length, "messages.")
     } catch (error) {
       console.error("Gagal mengambil pesan dari GitHub:", error)
       setMessages([]) // Ensure messages is an empty array on error
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to load messages. Please check your internet connection or GitHub token.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
+      })
     }
   }
 
@@ -61,7 +72,9 @@ function Chat() {
   const getUserIp = async () => {
     try {
       const cachedIp = localStorage.getItem("userIp")
-      if (cachedIp) {
+      const ipExpiration = localStorage.getItem("ipExpiration")
+
+      if (cachedIp && ipExpiration && new Date().getTime() < Number(ipExpiration)) {
         setUserIp(cachedIp)
         return
       }
@@ -74,6 +87,14 @@ function Chat() {
       localStorage.setItem("ipExpiration", expirationTime.toString())
     } catch (error) {
       console.error("Gagal mendapatkan alamat IP:", error)
+      Swal.fire({
+        icon: "warning",
+        title: "IP Address Error",
+        text: "Could not get your IP address. Some features might be limited.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
+      })
     }
   }
 
@@ -110,80 +131,90 @@ function Chat() {
   }
 
   const sendMessage = async () => {
-    if (message.trim() !== "") {
-      const isBlocked = await isIpBlocked()
+    if (message.trim() === "" || isSending) {
+      return // Jangan kirim pesan kosong atau jika sedang dalam proses pengiriman
+    }
 
-      if (isBlocked) {
-        Swal.fire({
-          icon: "error",
-          title: "Blocked",
-          text: "You are blocked from sending messages.",
-          customClass: {
-            container: "sweet-alert-container",
-          },
-        })
-        return
+    setIsSending(true) // Set status pengiriman menjadi true
+
+    const isBlocked = await isIpBlocked()
+
+    if (isBlocked) {
+      Swal.fire({
+        icon: "error",
+        title: "Blocked",
+        text: "You are blocked from sending messages.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
+      })
+      setIsSending(false) // Reset status pengiriman
+      return
+    }
+
+    const trimmedMessage = message.trim().substring(0, 60)
+    const userIpAddress = userIp
+
+    if (messageCount >= 20) {
+      Swal.fire({
+        icon: "error",
+        title: "Message limit exceeded",
+        text: "You have reached your daily message limit.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
+      })
+      setIsSending(false) // Reset status pengiriman
+      return
+    }
+
+    try {
+      console.log("Attempting to send message...")
+      // Fetch current messages and SHA
+      const { content: currentContent, sha: currentSha } = await getGitHubFile(CHATS_FILE_PATH)
+      const currentMessages = JSON.parse(currentContent)
+
+      const newMessage = {
+        message: trimmedMessage,
+        sender: {
+          image: "/AnonimUser.png", // Default anonymous user image
+        },
+        timestamp: new Date().toISOString(), // Use ISO string for consistent date format
+        userIp: userIp,
       }
 
-      const trimmedMessage = message.trim().substring(0, 60)
-      const userIpAddress = userIp
+      const updatedMessages = [...currentMessages, newMessage]
 
-      if (messageCount >= 20) {
-        Swal.fire({
-          icon: "error",
-          title: "Message limit exceeded",
-          text: "You have reached your daily message limit.",
-          customClass: {
-            container: "sweet-alert-container",
-          },
-        })
-        return
-      }
+      await updateGitHubFile(
+        CHATS_FILE_PATH,
+        JSON.stringify(updatedMessages, null, 2),
+        currentSha,
+        `Add new chat message from ${userIpAddress}`,
+      )
 
-      try {
-        // Fetch current messages and SHA
-        const { content: currentContent, sha: currentSha } = await getGitHubFile(CHATS_FILE_PATH)
-        const currentMessages = JSON.parse(currentContent)
+      const updatedSentMessageCount = messageCount + 1
+      localStorage.setItem(userIpAddress, updatedSentMessageCount.toString())
+      setMessageCount(updatedSentMessageCount)
 
-        const newMessage = {
-          message: trimmedMessage,
-          sender: {
-            image: "/AnonimUser.png", // Default anonymous user image
-          },
-          timestamp: new Date().toISOString(), // Use ISO string for consistent date format
-          userIp: userIp,
-        }
-
-        const updatedMessages = [...currentMessages, newMessage]
-
-        await updateGitHubFile(
-          CHATS_FILE_PATH,
-          JSON.stringify(updatedMessages, null, 2),
-          currentSha,
-          `Add new chat message from ${userIpAddress}`,
-        )
-
-        const updatedSentMessageCount = messageCount + 1
-        localStorage.setItem(userIpAddress, updatedSentMessageCount.toString())
-        setMessageCount(updatedSentMessageCount)
-
-        setMessage("")
-        // Re-fetch messages to update UI after successful send
-        await fetchMessages()
-        setTimeout(() => {
-          setShouldScrollToBottom(true)
-        }, 100)
-      } catch (error) {
-        console.error("Error sending message to GitHub:", error)
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to send message. Please try again.",
-          customClass: {
-            container: "sweet-alert-container",
-          },
-        })
-      }
+      setMessage("")
+      // Re-fetch messages to update UI after successful send
+      await fetchMessages()
+      setTimeout(() => {
+        setShouldScrollToBottom(true)
+      }, 100)
+      console.log("Message sent successfully!")
+    } catch (error) {
+      console.error("Error sending message to GitHub:", error)
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `Failed to send message. Please try again. Details: ${error.message}`, // Tampilkan detail error
+        customClass: {
+          container: "sweet-alert-container",
+        },
+      })
+    } finally {
+      setIsSending(false) // Reset status pengiriman setelah selesai (berhasil atau gagal)
     }
   }
 
@@ -216,10 +247,11 @@ function Chat() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Ketik pesan Anda..."
+          placeholder={isSending ? "Sending..." : "Ketik pesan Anda..."} // Tampilkan status pengiriman
           maxLength={60}
+          disabled={isSending} // Nonaktifkan input saat mengirim
         />
-        <button onClick={sendMessage} className="ml-2">
+        <button onClick={sendMessage} className="ml-2" disabled={isSending}>
           <img src="/paper-plane.png" alt="" className="h-4 w-4 lg:h-6 lg:w-6" />
         </button>
       </div>

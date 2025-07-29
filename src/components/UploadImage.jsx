@@ -144,7 +144,7 @@ function UploadImage({ onUploadSuccess }) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to upload image. Please try again.",
+        text: `Failed to upload image. Please try again. Details: ${error.message}`, // Tampilkan detail error
         customClass: {
           container: "sweet-alert-container",
         },
