@@ -8,7 +8,6 @@ import { getGitHubFile, updateGitHubFile } from "../lib/github"
 function Chat() {
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState([])
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
   const [userIp, setUserIp] = useState("")
   const [messageCount, setMessageCount] = useState(0)
   const [isSending, setIsSending] = useState(false) // State untuk menunjukkan pengiriman pesan
@@ -35,9 +34,6 @@ function Chat() {
       const { content } = await getGitHubFile(CHATS_FILE_PATH)
       const parsedMessages = JSON.parse(content)
       setMessages(parsedMessages)
-      if (shouldScrollToBottom) {
-        scrollToBottom()
-      }
       console.log("Chat messages fetched successfully:", parsedMessages.length, "messages.")
     } catch (error) {
       console.error("Gagal mengambil pesan dari GitHub:", error)
@@ -45,7 +41,7 @@ function Chat() {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to load messages. Please check your internet connection or GitHub token.",
+        text: "Failed to load messages. Please check your your GitHub token or internet connection.",
         customClass: {
           container: "sweet-alert-container",
         },
@@ -54,19 +50,18 @@ function Chat() {
   }
 
   useEffect(() => {
-    fetchMessages()
-  }, [shouldScrollToBottom])
+    fetchMessages() // Fetch messages on initial mount
+    getUserIp() // Fetch IP on mount
+    checkMessageCount() // Check message count on mount
+  }, []) // Empty dependency array means it runs once on mount
 
   useEffect(() => {
-    getUserIp()
-    checkMessageCount()
+    // Scroll to bottom whenever messages update
     scrollToBottom()
-  }, [])
+  }, [messages])
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" })
-    }, 100)
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   const getUserIp = async () => {
@@ -196,19 +191,25 @@ function Chat() {
       localStorage.setItem(userIpAddress, updatedSentMessageCount.toString())
       setMessageCount(updatedSentMessageCount)
 
-      setMessage("")
-      // Re-fetch messages to update UI after successful send
-      await fetchMessages()
-      setTimeout(() => {
-        setShouldScrollToBottom(true)
-      }, 100)
+      setMessage("") // Clear input field
+      await fetchMessages() // Re-fetch messages to update UI with the new message
+      // Scroll to bottom is handled by the useEffect on messages state change
+
+      Swal.fire({
+        icon: "success",
+        title: "Message Sent!",
+        text: "Your anonymous message has been sent successfully.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
+      })
       console.log("Message sent successfully!")
     } catch (error) {
       console.error("Error sending message to GitHub:", error)
       Swal.fire({
         icon: "error",
-        title: "Maintenance", // Changed title to "Maintenance"
-        text: "There was an error sending your message. The chat service might be under maintenance. Please try again later.", // Updated text
+        title: "Maintenance",
+        text: "There was an error sending your message. The chat service might be under maintenance. Please try again later.",
         customClass: {
           container: "sweet-alert-container",
         },
@@ -247,9 +248,9 @@ function Chat() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder={isSending ? "Sending..." : "Ketik pesan Anda..."} // Tampilkan status pengiriman
+          placeholder={isSending ? "Sending..." : "Ketik pesan Anda..."}
           maxLength={60}
-          disabled={isSending} // Nonaktifkan input saat mengirim
+          disabled={isSending}
         />
         <button onClick={sendMessage} className="ml-2" disabled={isSending}>
           <img src="/paper-plane.png" alt="" className="h-4 w-4 lg:h-6 lg:w-6" />
