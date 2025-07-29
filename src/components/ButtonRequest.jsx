@@ -1,15 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSpring, animated } from "react-spring"
-import Modal from "@mui/material/Modal"
 import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
+import Modal from "@mui/material/Modal"
 import Typography from "@mui/material/Typography"
+import { useSpring, animated } from "@react-spring/web"
 import CloseIcon from "@mui/icons-material/Close"
 import { getStorage, ref, listAll, getDownloadURL, getMetadata } from "firebase/storage"
 
-const ButtonRequest = () => {
+export default function ButtonRequest() {
   const [open, setOpen] = useState(false)
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
@@ -57,7 +57,7 @@ const ButtonRequest = () => {
   return (
     <div>
       <button onClick={handleOpen} className="flex items-center space-x-2 text-white px-6 py-4" id="SendRequest">
-        <img src="/Request.png" alt="Icon" className="w-6 h-6 relative bottom-1" />
+        <img src="/Request.png" alt="Icon" className="w-6 h-6 relative bottom-1 " />
         <span className="text-base lg:text-1xl">Request</span>
       </button>
 
@@ -108,5 +108,3 @@ const ButtonRequest = () => {
     </div>
   )
 }
-
-export default ButtonRequest
