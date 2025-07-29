@@ -8,7 +8,7 @@ const Footer = () => {
           <div class="mb-6 md:mb-0">
             <a href="#" class="flex items-center">
               <img
-                src="/LogoTKJ3.png"
+                src="/icon.png"
                 alt=""
                 className="h-[4.5rem] w-[4.5rem] right-2 relative rounded-full brightness-200"
               />
@@ -48,9 +48,7 @@ const Footer = () => {
         <hr class="my-2 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
         <div class="sm:flex sm:items-center sm:justify-between">
           <div class="flex mt-4 justify-center sm:mt-0">
-            <p className="text-[0.7rem] text-white opacity-70">
-              © {new Date().getFullYear()} Kelas XII TKJ 3 | Di Kelola Oleh Siswa TKJ 3
-            </p>
+            <p className="text-[0.7rem] text-white opacity-70">© 2025 Kelas 9B | Di Kelola Oleh Siswa Raol Mukarrozi</p>
           </div>
         </div>
       </div>
