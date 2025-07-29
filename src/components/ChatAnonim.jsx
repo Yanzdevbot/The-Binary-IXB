@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore"
-import { db, auth } from "../firebase"
 import axios from "axios"
 import Swal from "sweetalert2"
 
@@ -13,39 +11,32 @@ function Chat() {
   const [userIp, setUserIp] = useState("")
   const [messageCount, setMessageCount] = useState(0)
 
-  const chatsCollectionRef = collection(db, "chats")
   const messagesEndRef = useRef(null)
 
-  const fetchBlockedIPs = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "blacklist_ips"))
-      const blockedIPs = querySnapshot.docs.map((doc) => doc.data().ipAddress)
-      return blockedIPs
-    } catch (error) {
-      console.error("Gagal mengambil daftar IP yang diblokir:", error)
-      return []
-    }
-  }
-
   useEffect(() => {
-    const queryChats = query(chatsCollectionRef, orderBy("timestamp"))
-    const unsubscribe = onSnapshot(queryChats, (snapshot) => {
-      const newMessages = snapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-          ...data,
-          userIp: data.userIp,
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch("/api/chat")
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
-      })
-      setMessages(newMessages)
-      if (shouldScrollToBottom) {
-        scrollToBottom()
+        const data = await response.json()
+        setMessages(data)
+        if (shouldScrollToBottom) {
+          scrollToBottom()
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error)
       }
-    })
-
-    return () => {
-      unsubscribe()
     }
+
+    // Initial fetch
+    fetchMessages()
+
+    // Poll for new messages every 2 seconds
+    const intervalId = setInterval(fetchMessages, 2000)
+
+    return () => clearInterval(intervalId) // Cleanup interval on component unmount
   }, [shouldScrollToBottom])
 
   useEffect(() => {
@@ -104,28 +95,9 @@ function Chat() {
     }
   }
 
-  const isIpBlocked = async () => {
-    const blockedIPs = await fetchBlockedIPs()
-    return blockedIPs.includes(userIp)
-  }
-
   const sendMessage = async () => {
     if (message.trim() !== "") {
-      const isBlocked = await isIpBlocked()
-
-      if (isBlocked) {
-        Swal.fire({
-          icon: "error",
-          title: "Blocked",
-          text: "You are blocked from sending messages.",
-          customClass: {
-            container: "sweet-alert-container",
-          },
-        })
-        return
-      }
-
-      const senderImageURL = auth.currentUser?.photoURL || "/AnonimUser.png"
+      const senderImageURL = "/AnonimUser.png"
       const trimmedMessage = message.trim().substring(0, 60)
       const userIpAddress = userIp
 
@@ -145,19 +117,41 @@ function Chat() {
       localStorage.setItem(userIpAddress, updatedSentMessageCount.toString())
       setMessageCount(updatedSentMessageCount)
 
-      await addDoc(chatsCollectionRef, {
-        message: trimmedMessage,
-        sender: {
-          image: senderImageURL,
-        },
-        timestamp: new Date(),
-        userIp: userIp,
-      })
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: trimmedMessage,
+            sender: {
+              image: senderImageURL,
+            },
+            timestamp: new Date().toISOString(),
+            userIp: userIp,
+          }),
+        })
 
-      setMessage("")
-      setTimeout(() => {
-        setShouldScrollToBottom(true)
-      }, 100)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        setMessage("")
+        setTimeout(() => {
+          setShouldScrollToBottom(true)
+        }, 100)
+      } catch (error) {
+        console.error("Error sending message:", error)
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to send message. Please try again.",
+          customClass: {
+            container: "sweet-alert-container",
+          },
+        })
+      }
     }
   }
 
