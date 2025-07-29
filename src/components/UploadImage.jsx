@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { v4 as uuidv4 } from "uuid"
 import Swal from "sweetalert2"
-import { uploadGitHubImage, getGitHubFile, updateGitHubFile, GITHUB_RAW_BASE } from "../lib/github"
+import { uploadGitHubImage, getGitHubFile, updateGitHubFile, listGitHubDirectory, GITHUB_RAW_BASE } from "../lib/github"
 import PropTypes from "prop-types"
 
 function UploadImage({ onUploadSuccess }) {
@@ -71,24 +70,44 @@ function UploadImage({ onUploadSuccess }) {
       return
     }
 
-    Swal.fire({
-      title: "Uploading...",
-      text: "Please wait while your image is being uploaded.",
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading()
-      },
-    })
+    // Tidak perlu SweetAlert "Uploading..." lagi
 
     try {
       const reader = new FileReader()
       reader.readAsDataURL(imageUpload)
       reader.onloadend = async () => {
         const base64data = reader.result.split(",")[1] /** Get base64 string without data:image/jpeg;base64, */
-        const filename = `${uuidv4()}-${imageUpload.name}`
-        const imagePath = `${CLOUD_FOLDER_PATH}${filename}`
 
-        await uploadGitHubImage(imagePath, base64data, `Upload image: ${filename}`)
+        // Logika penamaan file berurutan
+        let nextImageNumber = 1
+        try {
+          const filesInCloud = await listGitHubDirectory(CLOUD_FOLDER_PATH)
+          const imageFiles = filesInCloud.filter(
+            (file) => file.type === "file" && /\.(png|jpg|jpeg|gif|webp)$/i.test(file.name),
+          )
+
+          if (imageFiles.length > 0) {
+            const numbers = imageFiles
+              .map((file) => {
+                const match = file.name.match(/^(\d+)\./) // Match number at the beginning of the filename
+                return match ? Number.parseInt(match[1], 10) : 0
+              })
+              .filter((num) => num > 0) // Filter out non-numeric or zero matches
+
+            if (numbers.length > 0) {
+              nextImageNumber = Math.max(...numbers) + 1
+            }
+          }
+        } catch (error) {
+          console.warn("Could not determine next image number, defaulting to 1:", error)
+          // Lanjutkan dengan nextImageNumber = 1 jika gagal
+        }
+
+        const fileExtension = imageUpload.name.split(".").pop()
+        const newFilename = `${nextImageNumber}.${fileExtension}`
+        const imagePath = `${CLOUD_FOLDER_PATH}${newFilename}`
+
+        await uploadGitHubImage(imagePath, base64data, `Upload image: ${newFilename}`)
 
         /** Update images.json with metadata */
         const { content: currentMetadataContent, sha: currentMetadataSha } =
@@ -98,7 +117,7 @@ function UploadImage({ onUploadSuccess }) {
         const newImageMetadata = {
           url: `${GITHUB_RAW_BASE}${imagePath}`,
           timestamp: new Date().toISOString(),
-          filename: filename,
+          filename: newFilename, // Gunakan nama file baru
         }
 
         const updatedImagesMetadata = [...currentImagesMetadata, newImageMetadata]
@@ -107,7 +126,7 @@ function UploadImage({ onUploadSuccess }) {
           IMAGES_METADATA_FILE_PATH,
           JSON.stringify(updatedImagesMetadata, null, 2),
           currentMetadataSha,
-          `Add metadata for ${filename}`,
+          `Add metadata for ${newFilename}`,
         )
 
         localStorage.setItem("uploadedImagesCount", uploadedImagesCount + 1)

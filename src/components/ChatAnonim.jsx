@@ -188,7 +188,7 @@ function Chat() {
       await updateGitHubFile(
         CHATS_FILE_PATH,
         JSON.stringify(updatedMessages, null, 2),
-        currentSha,
+        currentSha, // Pastikan SHA dikirim untuk update
         `Add new chat message from ${userIpAddress}`,
       )
 
