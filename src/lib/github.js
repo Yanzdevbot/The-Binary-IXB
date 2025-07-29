@@ -25,6 +25,9 @@ async function getGitHubFile(path) {
     }
     if (!response.ok) {
       const errorData = await response.json()
+      console.error(
+        `GitHub API error fetching ${path}: ${response.status} - ${errorData.message || response.statusText}`,
+      )
       throw new Error(`GitHub API error fetching ${path}: ${response.statusText} - ${errorData.message}`)
     }
 
@@ -37,6 +40,9 @@ async function getGitHubFile(path) {
     })
     if (!fileInfoResponse.ok) {
       const errorData = await fileInfoResponse.json()
+      console.error(
+        `GitHub API error fetching SHA for ${path}: ${fileInfoResponse.status} - ${errorData.message || fileInfoResponse.statusText}`,
+      )
       throw new Error(
         `GitHub API error fetching SHA for ${path}: ${fileInfoResponse.statusText} - ${errorData.message}`,
       )
@@ -81,6 +87,9 @@ async function updateGitHubFile(path, content, sha, message) {
     })
     if (!response.ok) {
       const errorData = await response.json()
+      console.error(
+        `GitHub API error updating ${path}: ${response.status} - ${errorData.message || response.statusText}`,
+      )
       throw new Error(`GitHub API error updating ${path}: ${response.statusText} - ${errorData.message}`)
     }
     return await response.json()
@@ -112,6 +121,9 @@ async function uploadGitHubImage(path, base64Content, message) {
     })
     if (!response.ok) {
       const errorData = await response.json()
+      console.error(
+        `GitHub API error uploading image ${path}: ${response.status} - ${errorData.message || response.statusText}`,
+      )
       throw new Error(`GitHub API error uploading image ${path}: ${response.statusText} - ${errorData.message}`)
     }
     return await response.json()
@@ -134,6 +146,7 @@ async function listGitHubDirectory(path) {
       },
     })
     if (!response.ok) {
+      console.error(`GitHub API error listing directory ${path}: ${response.status} - ${response.statusText}`)
       throw new Error(`GitHub API error listing directory ${path}: ${response.statusText}`)
     }
     return await response.json()
