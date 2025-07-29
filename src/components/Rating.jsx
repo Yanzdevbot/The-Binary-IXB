@@ -4,11 +4,11 @@ import * as React from "react"
 import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Slider from "@mui/material/Slider"
-import { getFirestore, collection, addDoc } from "firebase/firestore"
+import { getGitHubFile, updateGitHubFile } from "../lib/github" // Import GitHub utility
 
 const units = ["/Rating/1.png", "/Rating/2.png", "/Rating/3.png", "/Rating/4.png", "/Rating/5.png"]
 
-const db = getFirestore()
+const RATINGS_FILE_PATH = "data/ratings.json"
 
 export default function Rating() {
   const [value, setValue] = React.useState(() => {
@@ -35,19 +35,33 @@ export default function Rating() {
       setValue(newValue)
 
       try {
-        const docRef = await addDoc(collection(db, "ratings"), {
+        // Fetch current ratings and SHA
+        const { content: currentContent, sha: currentSha } = await getGitHubFile(RATINGS_FILE_PATH)
+        const currentRatings = JSON.parse(currentContent)
+
+        const newRating = {
           value: newValue,
-          timestamp: new Date(),
-        })
-        console.log("Document written with ID: ", docRef.id)
+          timestamp: new Date().toISOString(), // Use ISO string for consistent date format
+        }
+
+        const updatedRatings = [...currentRatings, newRating]
+
+        await updateGitHubFile(
+          RATINGS_FILE_PATH,
+          JSON.stringify(updatedRatings, null, 2),
+          currentSha,
+          `Add new rating: ${newValue}`,
+        )
 
         const newRemainingRatings = remainingRatings - 1
         setRemainingRatings(newRemainingRatings)
 
         localStorage.setItem("lastRating", newValue.toString())
         localStorage.setItem("remainingRatings", newRemainingRatings.toString())
+
+        console.log("Rating submitted successfully!")
       } catch (e) {
-        console.error("Error adding document: ", e)
+        console.error("Error adding rating to GitHub: ", e)
       } finally {
         setIsSubmitting(false)
       }

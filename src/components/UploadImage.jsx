@@ -1,46 +1,52 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { storage } from "../firebase"
-import { ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage"
+import { useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 import Swal from "sweetalert2"
+import { uploadGitHubImage, getGitHubFile, updateGitHubFile, GITHUB_RAW_BASE } from "../lib/github" // Import GitHub utility
 
 function UploadImage() {
   const [imageUpload, setImageUpload] = useState(null)
-  const [imageList, setImageList] = useState([])
-  const maxUploadSizeInBytes = 10 * 1024 * 1024
+  const maxUploadSizeInBytes = 10 * 1024 * 1024 // 10MB
   const maxUploadsPerDay = 20
 
-  useEffect(() => {
-    listImages()
-  }, [])
+  const IMAGES_METADATA_FILE_PATH = "data/images.json"
+  const CLOUD_FOLDER_PATH = "cloud/"
 
-  const listImages = () => {
-    const imageListRef = ref(storage, "images/")
-    listAll(imageListRef)
-      .then((response) => {
-        const imagePromises = response.items.map((item) => getDownloadURL(item))
-        Promise.all(imagePromises)
-          .then((urls) => {
-            setImageList(urls)
-          })
-          .catch((error) => {
-            console.log(error)
-          })
+  const uploadImage = async () => {
+    if (imageUpload == null) {
+      Swal.fire({
+        icon: "warning",
+        title: "No Image Selected",
+        text: "Please select an image to upload.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
       })
-      .catch((error) => {
-        console.log(error)
-      })
-  }
-
-  const uploadImage = () => {
-    if (imageUpload == null) return
+      return
+    }
 
     const uploadedImagesCount = Number.parseInt(localStorage.getItem("uploadedImagesCount")) || 0
     const lastUploadDate = localStorage.getItem("lastUploadDate")
 
-    if (uploadedImagesCount >= maxUploadsPerDay) {
+    // Reset count if it's a new day
+    if (lastUploadDate && new Date(lastUploadDate).toDateString() !== new Date().toDateString()) {
+      localStorage.setItem("uploadedImagesCount", 0)
+      localStorage.setItem("lastUploadDate", new Date().toISOString())
+      // Re-fetch count after resetting
+      const newCount = Number.parseInt(localStorage.getItem("uploadedImagesCount")) || 0
+      if (newCount >= maxUploadsPerDay) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "You have reached the maximum uploads for today.",
+          customClass: {
+            container: "sweet-alert-container",
+          },
+        })
+        return
+      }
+    } else if (uploadedImagesCount >= maxUploadsPerDay) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -50,10 +56,6 @@ function UploadImage() {
         },
       })
       return
-    }
-
-    if (lastUploadDate && new Date(lastUploadDate).toDateString() !== new Date().toDateString()) {
-      localStorage.setItem("uploadedImagesCount", 0)
     }
 
     if (imageUpload.size > maxUploadSizeInBytes) {
@@ -68,32 +70,80 @@ function UploadImage() {
       return
     }
 
-    const imageRef = ref(storage, `images/${imageUpload.name}-${uuidv4()}`)
-    uploadBytes(imageRef, imageUpload)
-      .then((snapshot) => {
-        getDownloadURL(snapshot.ref)
-          .then((url) => {
-            setImageList((prev) => [...prev, url])
-            localStorage.setItem("uploadedImagesCount", uploadedImagesCount + 1)
-            localStorage.setItem("lastUploadDate", new Date().toISOString())
+    Swal.fire({
+      title: "Uploading...",
+      text: "Please wait while your image is being uploaded.",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading()
+      },
+    })
 
-            Swal.fire({
-              icon: "success",
-              title: "Success!",
-              text: "Your image has been successfully uploaded.",
-              customClass: {
-                container: "sweet-alert-container",
-              },
-            })
-          })
-          .catch((error) => {
-            console.log(error)
-          })
-        setImageUpload(null)
+    try {
+      const reader = new FileReader()
+      reader.readAsDataURL(imageUpload)
+      reader.onloadend = async () => {
+        const base64data = reader.result.split(",")[1] // Get base64 string without data:image/jpeg;base64,
+        const filename = `${uuidv4()}-${imageUpload.name}`
+        const imagePath = `${CLOUD_FOLDER_PATH}${filename}`
+
+        await uploadGitHubImage(imagePath, base64data, `Upload image: ${filename}`)
+
+        // Update images.json with metadata
+        const { content: currentMetadataContent, sha: currentMetadataSha } =
+          await getGitHubFile(IMAGES_METADATA_FILE_PATH)
+        const currentImagesMetadata = JSON.parse(currentMetadataContent)
+
+        const newImageMetadata = {
+          url: `${GITHUB_RAW_BASE}${imagePath}`,
+          timestamp: new Date().toISOString(),
+          filename: filename,
+        }
+
+        const updatedImagesMetadata = [...currentImagesMetadata, newImageMetadata]
+
+        await updateGitHubFile(
+          IMAGES_METADATA_FILE_PATH,
+          JSON.stringify(updatedImagesMetadata, null, 2),
+          currentMetadataSha,
+          `Add metadata for ${filename}`,
+        )
+
+        localStorage.setItem("uploadedImagesCount", uploadedImagesCount + 1)
+        localStorage.setItem("lastUploadDate", new Date().toISOString())
+
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Your image has been successfully uploaded.",
+          customClass: {
+            container: "sweet-alert-container",
+          },
+        })
+        setImageUpload(null) // Clear selected image
+      }
+      reader.onerror = (error) => {
+        console.error("FileReader error:", error)
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to read image file.",
+          customClass: {
+            container: "sweet-alert-container",
+          },
+        })
+      }
+    } catch (error) {
+      console.error("Error uploading image to GitHub:", error)
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to upload image. Please try again.",
+        customClass: {
+          container: "sweet-alert-container",
+        },
       })
-      .catch((error) => {
-        console.log(error)
-      })
+    }
   }
 
   const handleImageChange = (event) => {
@@ -111,7 +161,7 @@ function UploadImage() {
       <div className="mx-auto p-4">
         <form>
           <div className="mb-4">
-            <input type="file" id="imageUpload" className="hidden" onChange={handleImageChange} />
+            <input type="file" id="imageUpload" className="hidden" onChange={handleImageChange} accept="image/*" />
             <label
               htmlFor="imageUpload"
               className="cursor-pointer border-dashed border-2 border-gray-400 rounded-lg p-4 w-56 h-auto flex items-center justify-center"

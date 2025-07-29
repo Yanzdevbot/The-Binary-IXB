@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from "firebase/firestore"
-import { db, auth } from "../firebase"
 import axios from "axios"
 import Swal from "sweetalert2"
+import { getGitHubFile, updateGitHubFile } from "../lib/github" // Import GitHub utility
 
 function Chat() {
   const [message, setMessage] = useState("")
@@ -13,39 +12,38 @@ function Chat() {
   const [userIp, setUserIp] = useState("")
   const [messageCount, setMessageCount] = useState(0)
 
-  const chatsCollectionRef = collection(db, "chats")
   const messagesEndRef = useRef(null)
+
+  const CHATS_FILE_PATH = "data/chats.json"
+  const BLOCKED_IPS_FILE_PATH = "data/blocked_ips.json"
 
   const fetchBlockedIPs = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, "blacklist_ips"))
-      const blockedIPs = querySnapshot.docs.map((doc) => doc.data().ipAddress)
-      return blockedIPs
+      const { content } = await getGitHubFile(BLOCKED_IPS_FILE_PATH)
+      const blockedIPsData = JSON.parse(content)
+      return blockedIPsData.map((item) => item.ipAddress)
     } catch (error) {
-      console.error("Gagal mengambil daftar IP yang diblokir:", error)
+      console.error("Gagal mengambil daftar IP yang diblokir dari GitHub:", error)
       return []
     }
   }
 
-  useEffect(() => {
-    const queryChats = query(chatsCollectionRef, orderBy("timestamp"))
-    const unsubscribe = onSnapshot(queryChats, (snapshot) => {
-      const newMessages = snapshot.docs.map((doc) => {
-        const data = doc.data()
-        return {
-          ...data,
-          userIp: data.userIp,
-        }
-      })
-      setMessages(newMessages)
+  const fetchMessages = async () => {
+    try {
+      const { content } = await getGitHubFile(CHATS_FILE_PATH)
+      const parsedMessages = JSON.parse(content)
+      setMessages(parsedMessages)
       if (shouldScrollToBottom) {
         scrollToBottom()
       }
-    })
-
-    return () => {
-      unsubscribe()
+    } catch (error) {
+      console.error("Gagal mengambil pesan dari GitHub:", error)
+      setMessages([]) // Ensure messages is an empty array on error
     }
+  }
+
+  useEffect(() => {
+    fetchMessages()
   }, [shouldScrollToBottom])
 
   useEffect(() => {
@@ -70,6 +68,7 @@ function Chat() {
       const response = await axios.get("https://ipapi.co/json")
       const newUserIp = response.data.network
       setUserIp(newUserIp)
+      // Store IP for 1 hour
       const expirationTime = new Date().getTime() + 60 * 60 * 1000
       localStorage.setItem("userIp", newUserIp)
       localStorage.setItem("ipExpiration", expirationTime.toString())
@@ -101,6 +100,7 @@ function Chat() {
     } else {
       localStorage.removeItem(userIpAddress)
       localStorage.setItem("messageCountDate", currentDateString)
+      setMessageCount(0) // Reset count for new day
     }
   }
 
@@ -125,7 +125,6 @@ function Chat() {
         return
       }
 
-      const senderImageURL = auth.currentUser?.photoURL || "/AnonimUser.png"
       const trimmedMessage = message.trim().substring(0, 60)
       const userIpAddress = userIp
 
@@ -141,23 +140,50 @@ function Chat() {
         return
       }
 
-      const updatedSentMessageCount = messageCount + 1
-      localStorage.setItem(userIpAddress, updatedSentMessageCount.toString())
-      setMessageCount(updatedSentMessageCount)
+      try {
+        // Fetch current messages and SHA
+        const { content: currentContent, sha: currentSha } = await getGitHubFile(CHATS_FILE_PATH)
+        const currentMessages = JSON.parse(currentContent)
 
-      await addDoc(chatsCollectionRef, {
-        message: trimmedMessage,
-        sender: {
-          image: senderImageURL,
-        },
-        timestamp: new Date(),
-        userIp: userIp,
-      })
+        const newMessage = {
+          message: trimmedMessage,
+          sender: {
+            image: "/AnonimUser.png", // Default anonymous user image
+          },
+          timestamp: new Date().toISOString(), // Use ISO string for consistent date format
+          userIp: userIp,
+        }
 
-      setMessage("")
-      setTimeout(() => {
-        setShouldScrollToBottom(true)
-      }, 100)
+        const updatedMessages = [...currentMessages, newMessage]
+
+        await updateGitHubFile(
+          CHATS_FILE_PATH,
+          JSON.stringify(updatedMessages, null, 2),
+          currentSha,
+          `Add new chat message from ${userIpAddress}`,
+        )
+
+        const updatedSentMessageCount = messageCount + 1
+        localStorage.setItem(userIpAddress, updatedSentMessageCount.toString())
+        setMessageCount(updatedSentMessageCount)
+
+        setMessage("")
+        // Re-fetch messages to update UI after successful send
+        await fetchMessages()
+        setTimeout(() => {
+          setShouldScrollToBottom(true)
+        }, 100)
+      } catch (error) {
+        console.error("Error sending message to GitHub:", error)
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to send message. Please try again.",
+          customClass: {
+            container: "sweet-alert-container",
+          },
+        })
+      }
     }
   }
 

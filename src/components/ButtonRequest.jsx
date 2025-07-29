@@ -7,7 +7,7 @@ import Modal from "@mui/material/Modal"
 import Typography from "@mui/material/Typography"
 import { useSpring, animated } from "@react-spring/web"
 import CloseIcon from "@mui/icons-material/Close"
-import { getStorage, ref, listAll, getDownloadURL, getMetadata } from "firebase/storage"
+import { getGitHubFile } from "../lib/github" // Import GitHub utility
 
 export default function ButtonRequest() {
   const [open, setOpen] = useState(false)
@@ -23,35 +23,21 @@ export default function ButtonRequest() {
 
   const [images, setImages] = useState([])
 
-  const fetchImagesFromFirebase = async () => {
+  const fetchImagesFromGitHub = async () => {
     try {
-      const storage = getStorage()
-      const storageRef = ref(storage, "images/")
-
-      const imagesList = await listAll(storageRef)
-
-      const imagePromises = imagesList.items.map(async (item) => {
-        const url = await getDownloadURL(item)
-        const metadata = await getMetadata(item)
-
-        return {
-          url,
-          timestamp: metadata.timeCreated,
-        }
-      })
-
-      const imageURLs = await Promise.all(imagePromises)
-
-      imageURLs.sort((a, b) => a.timestamp - b.timestamp)
-
-      setImages(imageURLs)
+      const { content } = await getGitHubFile("data/images.json")
+      const imageData = JSON.parse(content)
+      // Sort images by timestamp in descending order (newest first)
+      imageData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      setImages(imageData)
     } catch (error) {
-      console.error("Error fetching images from Firebase Storage:", error)
+      console.error("Error fetching images from GitHub:", error)
+      setImages([]) // Ensure images is an empty array on error
     }
   }
 
   useEffect(() => {
-    fetchImagesFromFirebase()
+    fetchImagesFromGitHub()
   }, [])
 
   return (
@@ -81,22 +67,20 @@ export default function ButtonRequest() {
             <Typography id="spring-modal-description" sx={{ mt: 2 }}>
               <h6 className="text-center text-white text-2xl mb-5">Request</h6>
               <div className="h-[22rem] overflow-y-scroll overflow-y-scroll-no-thumb">
-                {images
-                  .map((imageData, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center px-5 py-2 mt-2"
-                      id="LayoutIsiButtonRequest"
-                    >
-                      <img
-                        src={imageData.url || "/placeholder.svg"}
-                        alt={`Image ${index}`}
-                        className="h-10 w-10 blur-sm"
-                      />
-                      <span className="ml-2 text-white">{new Date(imageData.timestamp).toLocaleString()}</span>
-                    </div>
-                  ))
-                  .reverse()}
+                {images.map((imageData, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center px-5 py-2 mt-2"
+                    id="LayoutIsiButtonRequest"
+                  >
+                    <img
+                      src={imageData.url || "/placeholder.svg"}
+                      alt={`Image ${index}`}
+                      className="h-10 w-10 blur-sm"
+                    />
+                    <span className="ml-2 text-white">{new Date(imageData.timestamp).toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
               <div className="text-white text-[0.7rem] mt-5">
                 Note : Jika tidak ada gambar yang sudah anda upload silahkan reload
