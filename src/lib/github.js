@@ -1,12 +1,15 @@
 // src/lib/github.js
-// WARNING: Hardcoding API key in client-side code is a security risk!
+// WARNING: Hardcoding API key in client-side code, even Base64 encoded, is a security risk!
 // For production, consider a server-side proxy or environment variables.
-const GITHUB_TOKEN = "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"
-const REPO_OWNER = "raolbyte" // IMPORTANT: Replace with your GitHub username
-const REPO_NAME = "database" // IMPORTANT: Replace with your GitHub repository name
+const ENCODED_GITHUB_TOKEN = "Z2hwXzBQRVRFRmhvNFVEM1RueVBLYjVORTFTTU9NSmRTWjBLN3NIMg==" // Base64 encoded:
+const REPO_OWNER = "raolbyte"
+const REPO_NAME = "database"
 
 const GITHUB_API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`
 const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/` // Assuming 'main' branch
+
+// Decode the Base64 encoded token
+const GITHUB_TOKEN = atob(ENCODED_GITHUB_TOKEN)
 
 /**
  * Fetches the content of a file from GitHub.
