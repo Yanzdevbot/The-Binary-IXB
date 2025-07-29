@@ -7,9 +7,9 @@ import Modal from "@mui/material/Modal"
 import Typography from "@mui/material/Typography"
 import { useSpring, animated } from "@react-spring/web"
 import CloseIcon from "@mui/icons-material/Close"
-import { getGitHubFile } from "../lib/github" // Import GitHub utility
+import { getGitHubFile } from "../lib/github"
 
-export default function ButtonRequest() {
+export default function ButtonRequest({ galleryRefreshKey }) {
   const [open, setOpen] = useState(false)
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
@@ -27,18 +27,18 @@ export default function ButtonRequest() {
     try {
       const { content } = await getGitHubFile("data/images.json")
       const imageData = JSON.parse(content)
-      // Sort images by timestamp in descending order (newest first)
+      /** Sort images by timestamp in descending order (newest first) */
       imageData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       setImages(imageData)
     } catch (error) {
       console.error("Error fetching images from GitHub:", error)
-      setImages([]) // Ensure images is an empty array on error
+      setImages([]) /** Ensure images is an empty array on error */
     }
   }
 
   useEffect(() => {
     fetchImagesFromGitHub()
-  }, [])
+  }, [galleryRefreshKey]) /** Tambahkan galleryRefreshKey sebagai dependency */
 
   return (
     <div>

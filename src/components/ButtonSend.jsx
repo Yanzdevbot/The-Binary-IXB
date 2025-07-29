@@ -48,10 +48,21 @@ Fade.propTypes = {
   ownerState: PropTypes.any,
 }
 
-export default function ButtonSend() {
+export default function ButtonSend({ onUploadSuccess }) {
   const [open, setOpen] = React.useState(false)
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
+
+  /**
+   * Fungsi yang dipanggil setelah upload berhasil di UploadImage.
+   * Memicu refresh galeri dan menutup modal.
+   */
+  const handleUploadAndClose = () => {
+    if (onUploadSuccess) {
+      onUploadSuccess()
+    }
+    handleClose()
+  }
 
   return (
     <div>
@@ -84,11 +95,16 @@ export default function ButtonSend() {
               />
             </Button>
             <Typography id="spring-modal-description" sx={{ mt: 2 }}>
-              <UploadImage />
+              {/* Meneruskan handleUploadAndClose ke UploadImage */}
+              <UploadImage onUploadSuccess={handleUploadAndClose} />
             </Typography>
           </Box>
         </Fade>
       </Modal>
     </div>
   )
+}
+
+ButtonSend.propTypes = {
+  onUploadSuccess: PropTypes.func,
 }

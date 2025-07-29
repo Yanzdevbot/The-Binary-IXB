@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 import Swal from "sweetalert2"
-import { uploadGitHubImage, getGitHubFile, updateGitHubFile, GITHUB_RAW_BASE } from "../lib/github" // Import GitHub utility
+import { uploadGitHubImage, getGitHubFile, updateGitHubFile, GITHUB_RAW_BASE } from "../lib/github"
+import PropTypes from "prop-types"
 
-function UploadImage() {
+function UploadImage({ onUploadSuccess }) {
   const [imageUpload, setImageUpload] = useState(null)
-  const maxUploadSizeInBytes = 10 * 1024 * 1024 // 10MB
+  const maxUploadSizeInBytes = 10 * 1024 * 1024 /** 10MB */
   const maxUploadsPerDay = 20
 
   const IMAGES_METADATA_FILE_PATH = "data/images.json"
@@ -29,11 +30,11 @@ function UploadImage() {
     const uploadedImagesCount = Number.parseInt(localStorage.getItem("uploadedImagesCount")) || 0
     const lastUploadDate = localStorage.getItem("lastUploadDate")
 
-    // Reset count if it's a new day
+    /** Reset count if it's a new day */
     if (lastUploadDate && new Date(lastUploadDate).toDateString() !== new Date().toDateString()) {
       localStorage.setItem("uploadedImagesCount", 0)
       localStorage.setItem("lastUploadDate", new Date().toISOString())
-      // Re-fetch count after resetting
+      /** Re-fetch count after resetting */
       const newCount = Number.parseInt(localStorage.getItem("uploadedImagesCount")) || 0
       if (newCount >= maxUploadsPerDay) {
         Swal.fire({
@@ -83,13 +84,13 @@ function UploadImage() {
       const reader = new FileReader()
       reader.readAsDataURL(imageUpload)
       reader.onloadend = async () => {
-        const base64data = reader.result.split(",")[1] // Get base64 string without data:image/jpeg;base64,
+        const base64data = reader.result.split(",")[1] /** Get base64 string without data:image/jpeg;base64, */
         const filename = `${uuidv4()}-${imageUpload.name}`
         const imagePath = `${CLOUD_FOLDER_PATH}${filename}`
 
         await uploadGitHubImage(imagePath, base64data, `Upload image: ${filename}`)
 
-        // Update images.json with metadata
+        /** Update images.json with metadata */
         const { content: currentMetadataContent, sha: currentMetadataSha } =
           await getGitHubFile(IMAGES_METADATA_FILE_PATH)
         const currentImagesMetadata = JSON.parse(currentMetadataContent)
@@ -120,7 +121,12 @@ function UploadImage() {
             container: "sweet-alert-container",
           },
         })
-        setImageUpload(null) // Clear selected image
+        setImageUpload(null) /** Clear selected image */
+
+        /** Panggil callback untuk memberitahu komponen induk bahwa upload berhasil */
+        if (onUploadSuccess) {
+          onUploadSuccess()
+        }
       }
       reader.onerror = (error) => {
         console.error("FileReader error:", error)
@@ -202,6 +208,10 @@ function UploadImage() {
       </button>
     </div>
   )
+}
+
+UploadImage.propTypes = {
+  onUploadSuccess: PropTypes.func,
 }
 
 export default UploadImage
