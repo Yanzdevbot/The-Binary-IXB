@@ -1,7 +1,7 @@
 // src/lib/github.js
 // WARNING: Hardcoding API key in client-side code is a security risk!
 // For production, consider a server-side proxy or environment variables.
-const GITHUB_TOKEN = "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"
+const GITHUB_TOKEN = "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"
 const REPO_OWNER = "raolbyte" // IMPORTANT: Replace with your GitHub username
 const REPO_NAME = "database" // IMPORTANT: Replace with your GitHub repository name
 
