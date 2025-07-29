@@ -1,15 +1,9 @@
-// src/lib/github.js
-// WARNING: Hardcoding API key in client-side code, even Base64 encoded, is a security risk!
-// For production, consider a server-side proxy or environment variables.
-const ENCODED_GITHUB_TOKEN = "Z2hwXzBQRVRFRmhvNFVEM1RueVBLYjVORTFTTU9NSmRTWjBLN3NIMg==" // Base64 encoded:
+const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN
 const REPO_OWNER = "raolbyte"
 const REPO_NAME = "database"
 
 const GITHUB_API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`
-const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/` // Assuming 'main' branch
-
-// Decode the Base64 encoded token
-const GITHUB_TOKEN = atob(ENCODED_GITHUB_TOKEN)
+const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/`
 
 /**
  * Fetches the content of a file from GitHub.
@@ -21,12 +15,11 @@ async function getGitHubFile(path) {
     const response = await fetch(`${GITHUB_API_BASE}${path}`, {
       headers: {
         Authorization: `token ${GITHUB_TOKEN}`,
-        Accept: "application/vnd.github.v3.raw", // To get raw content directly
+        Accept: "application/vnd.github.v3.raw",
       },
     })
 
     if (response.status === 404) {
-      // File not found, return empty content and null SHA
       console.warn(`File not found on GitHub: ${path}. Returning empty content.`)
       return { content: path.endsWith(".json") ? "[]" : "", sha: null }
     }
@@ -37,7 +30,6 @@ async function getGitHubFile(path) {
 
     const content = await response.text()
 
-    // To get the SHA, we need to make another request without the raw accept header
     const fileInfoResponse = await fetch(`${GITHUB_API_BASE}${path}`, {
       headers: {
         Authorization: `token ${GITHUB_TOKEN}`,
@@ -53,7 +45,6 @@ async function getGitHubFile(path) {
     return { content, sha: fileInfo.sha }
   } catch (error) {
     console.error(`Error fetching file ${path} from GitHub:`, error)
-    // Return default empty content for JSON files if they don't exist or error
     if (path.endsWith(".json")) {
       return { content: "[]", sha: null }
     }
@@ -70,13 +61,13 @@ async function getGitHubFile(path) {
  * @returns {Promise<object>} The API response.
  */
 async function updateGitHubFile(path, content, sha, message) {
-  const encodedContent = btoa(unescape(encodeURIComponent(content))) // Base64 encode for GitHub API
+  const encodedContent = btoa(unescape(encodeURIComponent(content)))
   const body = {
     message: message,
     content: encodedContent,
   }
   if (sha) {
-    body.sha = sha // Only include SHA if updating an existing file
+    body.sha = sha
   }
 
   try {
@@ -116,7 +107,7 @@ async function uploadGitHubImage(path, base64Content, message) {
       },
       body: JSON.stringify({
         message: message,
-        content: base64Content, // Already base64 encoded
+        content: base64Content,
       }),
     })
     if (!response.ok) {
