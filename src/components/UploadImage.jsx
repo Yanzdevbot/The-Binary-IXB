@@ -109,6 +109,15 @@ function UploadImage({ onUploadSuccess }) {
 
         await uploadGitHubImage(imagePath, base64data, `Upload image: ${newFilename}`)
 
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Your image has been successfully uploaded.",
+          customClass: {
+            container: "sweet-alert-container",
+          },
+        })
+
         /** Update images.json with metadata */
         const { content: currentMetadataContent, sha: currentMetadataSha } =
           await getGitHubFile(IMAGES_METADATA_FILE_PATH)
@@ -132,14 +141,6 @@ function UploadImage({ onUploadSuccess }) {
         localStorage.setItem("uploadedImagesCount", uploadedImagesCount + 1)
         localStorage.setItem("lastUploadDate", new Date().toISOString())
 
-        Swal.fire({
-          icon: "success",
-          title: "Success!",
-          text: "Your image has been successfully uploaded.",
-          customClass: {
-            container: "sweet-alert-container",
-          },
-        })
         setImageUpload(null) /** Clear selected image */
 
         /** Panggil callback untuk memberitahu komponen induk bahwa upload berhasil */

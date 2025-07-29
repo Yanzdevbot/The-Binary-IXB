@@ -207,8 +207,8 @@ function Chat() {
       console.error("Error sending message to GitHub:", error)
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: `Failed to send message. Please try again. Details: ${error.message}`, // Tampilkan detail error
+        title: "Maintenance", // Changed title to "Maintenance"
+        text: "There was an error sending your message. The chat service might be under maintenance. Please try again later.", // Updated text
         customClass: {
           container: "sweet-alert-container",
         },
