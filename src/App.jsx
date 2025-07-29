@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Home from "./Pages/Home"
 import Carousel from "./Pages/Gallery"
 import FullWidthTabs from "./Pages/Tabs"
@@ -15,11 +15,26 @@ function App() {
     AOS.refresh()
   }, [])
 
+  /**
+   * State untuk memicu refresh galeri.
+   * Nilainya akan diubah setiap kali upload gambar berhasil.
+   */
+  const [galleryRefreshKey, setGalleryRefreshKey] = useState(0)
+
+  /**
+   * Fungsi untuk memicu refresh galeri.
+   * Akan dipanggil dari komponen UploadImage.
+   */
+  const handleGalleryRefresh = () => {
+    setGalleryRefreshKey((prevKey) => prevKey + 1)
+  }
+
   return (
     <>
       <Home />
 
-      <Carousel />
+      {/* Meneruskan galleryRefreshKey dan handleGalleryRefresh ke Carousel */}
+      <Carousel galleryRefreshKey={galleryRefreshKey} />
       <FullWidthTabs />
 
       <div id="Mesh1"></div>
