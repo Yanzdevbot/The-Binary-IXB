@@ -24,24 +24,25 @@ async function getGitHubFile(path) {
       return { content: path.endsWith(".json") ? "[]" : "", sha: null }
     }
     if (!response.ok) {
-      const errorData = await response.json()
+      const errorData = await response.json().catch(() => ({ message: "No error message from API" })) // Try to parse, fallback if not JSON
       console.error(
-        `GitHub API error fetching ${path}: ${response.status} - ${errorData.message || response.statusText}`,
+        `GitHub API error fetching ${path}: Status ${response.status} - ${response.statusText}. Message: ${errorData.message}`,
       )
       throw new Error(`GitHub API error fetching ${path}: ${response.statusText} - ${errorData.message}`)
     }
 
     const content = await response.text()
 
+    // Fetch SHA separately as raw content doesn't include it
     const fileInfoResponse = await fetch(`${GITHUB_API_BASE}${path}`, {
       headers: {
         Authorization: `token ${GITHUB_TOKEN}`,
       },
     })
     if (!fileInfoResponse.ok) {
-      const errorData = await fileInfoResponse.json()
+      const errorData = await fileInfoResponse.json().catch(() => ({ message: "No error message from API" }))
       console.error(
-        `GitHub API error fetching SHA for ${path}: ${fileInfoResponse.status} - ${errorData.message || fileInfoResponse.statusText}`,
+        `GitHub API error fetching SHA for ${path}: Status ${fileInfoResponse.status} - ${fileInfoResponse.statusText}. Message: ${errorData.message}`,
       )
       throw new Error(
         `GitHub API error fetching SHA for ${path}: ${fileInfoResponse.statusText} - ${errorData.message}`,
@@ -50,7 +51,7 @@ async function getGitHubFile(path) {
     const fileInfo = await fileInfoResponse.json()
     return { content, sha: fileInfo.sha }
   } catch (error) {
-    console.error(`Error fetching file ${path} from GitHub:`, error)
+    console.error(`Caught error fetching file ${path} from GitHub:`, error) // Log the full error object
     if (path.endsWith(".json")) {
       return { content: "[]", sha: null }
     }
@@ -86,15 +87,15 @@ async function updateGitHubFile(path, content, sha, message) {
       body: JSON.stringify(body),
     })
     if (!response.ok) {
-      const errorData = await response.json()
+      const errorData = await response.json().catch(() => ({ message: "No error message from API" }))
       console.error(
-        `GitHub API error updating ${path}: ${response.status} - ${errorData.message || response.statusText}`,
+        `GitHub API error updating ${path}: Status ${response.status} - ${response.statusText}. Message: ${errorData.message}`,
       )
       throw new Error(`GitHub API error updating ${path}: ${response.statusText} - ${errorData.message}`)
     }
     return await response.json()
   } catch (error) {
-    console.error(`Error updating file ${path} on GitHub:`, error)
+    console.error(`Caught error updating file ${path} on GitHub:`, error)
     throw error
   }
 }
@@ -120,15 +121,15 @@ async function uploadGitHubImage(path, base64Content, message) {
       }),
     })
     if (!response.ok) {
-      const errorData = await response.json()
+      const errorData = await response.json().catch(() => ({ message: "No error message from API" }))
       console.error(
-        `GitHub API error uploading image ${path}: ${response.status} - ${errorData.message || response.statusText}`,
+        `GitHub API error uploading image ${path}: Status ${response.status} - ${response.statusText}. Message: ${errorData.message}`,
       )
       throw new Error(`GitHub API error uploading image ${path}: ${response.statusText} - ${errorData.message}`)
     }
     return await response.json()
   } catch (error) {
-    console.error(`Error uploading image ${path} to GitHub:`, error)
+    console.error(`Caught error uploading image ${path} to GitHub:`, error)
     throw error
   }
 }
@@ -146,12 +147,15 @@ async function listGitHubDirectory(path) {
       },
     })
     if (!response.ok) {
-      console.error(`GitHub API error listing directory ${path}: ${response.status} - ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({ message: "No error message from API" }))
+      console.error(
+        `GitHub API error listing directory ${path}: Status ${response.status} - ${response.statusText}. Message: ${errorData.message}`,
+      )
       throw new Error(`GitHub API error listing directory ${path}: ${response.statusText}`)
     }
     return await response.json()
   } catch (error) {
-    console.error(`Error listing directory ${path} from GitHub:`, error)
+    console.error(`Caught error listing directory ${path} from GitHub:`, error)
     return []
   }
 }
