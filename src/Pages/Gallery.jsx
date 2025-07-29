@@ -6,11 +6,11 @@ import "slick-carousel/slick/slick.css"
 import "slick-carousel/slick/slick-theme.css"
 import ButtonSend from "../components/ButtonSend"
 import ButtonRequest from "../components/ButtonRequest"
-import { getStorage, ref, listAll, getDownloadURL } from "firebase/storage"
 import Modal from "@mui/material/Modal"
 import { IconButton } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { useSpring, animated } from "@react-spring/web"
+import { getGitHubFile } from "../lib/github" // Import GitHub utility
 
 const Carousel = () => {
   const [images, setImages] = useState([])
@@ -22,28 +22,21 @@ const Carousel = () => {
     config: { duration: 300 },
   })
 
-  const fetchImagesFromFirebase = async () => {
+  const fetchImagesFromGitHub = async () => {
     try {
-      const storage = getStorage()
-      const storageRef = ref(storage, "GambarAman/")
-
-      const imagesList = await listAll(storageRef)
-
-      const imageURLs = await Promise.all(
-        imagesList.items.map(async (item) => {
-          const url = await getDownloadURL(item)
-          return url
-        }),
-      )
-
-      setImages(imageURLs)
+      const { content } = await getGitHubFile("data/images.json")
+      const imageData = JSON.parse(content)
+      // Sort images by timestamp in descending order (newest first)
+      imageData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      setImages(imageData.map((img) => img.url)) // Extract only URLs for the carousel
     } catch (error) {
-      console.error("Error fetching images from Firebase Storage:", error)
+      console.error("Error fetching images from GitHub:", error)
+      setImages([]) // Ensure images is an empty array on error
     }
   }
 
   useEffect(() => {
-    fetchImagesFromFirebase()
+    fetchImagesFromGitHub()
   }, [])
 
   const settings = {
