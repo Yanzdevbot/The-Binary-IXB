@@ -15,7 +15,7 @@ async function getGitHubFile(path) {
     const response = await fetch(`${GITHUB_API_BASE}${path}`, {
       headers: {
         Authorization: `token ${GITHUB_TOKEN}`,
-        Accept: "application/vnd.github.v3.raw",
+        Accept: "application/vnd.github.v3+json", // Request JSON response to get SHA and content
       },
     })
 
@@ -31,24 +31,10 @@ async function getGitHubFile(path) {
       throw new Error(`GitHub API error fetching ${path}: ${response.statusText} - ${errorData.message}`)
     }
 
-    const content = await response.text()
+    const fileInfo = await response.json()
+    // GitHub returns content in base64 for JSON requests to /contents API
+    const content = decodeURIComponent(escape(atob(fileInfo.content)))
 
-    // Fetch SHA separately as raw content doesn't include it
-    const fileInfoResponse = await fetch(`${GITHUB_API_BASE}${path}`, {
-      headers: {
-        Authorization: `token ${GITHUB_TOKEN}`,
-      },
-    })
-    if (!fileInfoResponse.ok) {
-      const errorData = await fileInfoResponse.json().catch(() => ({ message: "No error message from API" }))
-      console.error(
-        `GitHub API error fetching SHA for ${path}: Status ${fileInfoResponse.status} - ${fileInfoResponse.statusText}. Message: ${errorData.message}`,
-      )
-      throw new Error(
-        `GitHub API error fetching SHA for ${path}: ${fileInfoResponse.statusText} - ${errorData.message}`,
-      )
-    }
-    const fileInfo = await fileInfoResponse.json()
     return { content, sha: fileInfo.sha }
   } catch (error) {
     console.error(`Caught error fetching file ${path} from GitHub:`, error) // Log the full error object
