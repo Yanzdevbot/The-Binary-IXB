@@ -70,14 +70,14 @@ const StrukturKelas = () => {
         {/* wakil dan ketua */}
         <div className="flex relative top-[-3rem]" data-aos="fade-up" data-aos-duration="1200">
           <div className="relative left-[0.2rem]">
-            <BorderStruktur Jabatan="Ketua Kelas" Nama="Putry" Width="120px" />
+            <BorderStruktur Jabatan="Ketua Kelas" Nama="" Width="120px" />
           </div>
           <img src="LineHorizontalPendek.svg" className="relative top-3" />
           <img src="LineHorizontalPendek.svg" className="relative top-3 hidden lg:flex" />
           <img src="LineHorizontalPendek.svg" className="relative top-3 hidden lg:flex" />
           <img src="LineHorizontalPendek.svg" className="relative top-3 hidden lg:flex" />
           <div className="relative right-[0.2rem]">
-            <BorderStruktur Jabatan="Wakil Ketua" Nama="Jeriko" Width="120px" />
+            <BorderStruktur Jabatan="Wakil Ketua" Nama="" Width="120px" />
           </div>
         </div>
 
@@ -135,15 +135,15 @@ const StrukturKelas = () => {
           data-aos-duration="1200"
         >
           <div className="flex-col">
-            <BorderStruktur Jabatan="Sekertaris" Nama="Pratiwi" Width="120px" />
+            <BorderStruktur Jabatan="Sekertaris" Nama="" Width="120px" />
             <div className="py-[3%]"></div>
-            <BorderStruktur Jabatan="" Nama="Paulista" Width="120px" />
+            <BorderStruktur Jabatan="" Nama="" Width="120px" />
           </div>
 
           <div className="flex-col">
-            <BorderStruktur Jabatan="Bendahara" Nama="Lista" Width="120px" />
+            <BorderStruktur Jabatan="Bendahara" Nama="" Width="120px" />
             <div className="py-[3%]"></div>
-            <BorderStruktur Jabatan="" Nama="Davina" Width="120px" />
+            <BorderStruktur Jabatan="" Nama="" Width="120px" />
           </div>
         </div>
 
@@ -208,21 +208,21 @@ const StrukturKelas = () => {
           data-aos-duration="1100"
         >
           <div className="flex-col">
-            <BorderStruktur Jabatan="Keamanan" Nama="Damar" Width="120px" />
+            <BorderStruktur Jabatan="Keamanan" Nama="" Width="120px" />
             <div className="py-[3%]"></div>
-            <BorderStruktur Jabatan="" Nama="Windi" Width="120px" />
+            <BorderStruktur Jabatan="" Nama="" Width="120px" />
           </div>
 
           <div className="flex-col">
-            <BorderStruktur Jabatan="Kebersihan" Nama="Jeriko" Width="120px" />
+            <BorderStruktur Jabatan="Kebersihan" Nama="" Width="120px" />
             <div className="py-[3%]"></div>
-            <BorderStruktur Jabatan="" Nama="Raka" Width="120px" />
+            <BorderStruktur Jabatan="" Nama="" Width="120px" />
           </div>
 
           <div className="flex-col hidden lg:flex">
-            <BorderStruktur Jabatan="Kesehatan" Nama="Eki" Width="120px" />
+            <BorderStruktur Jabatan="Kesehatan" Nama="" Width="120px" />
             <div className="py-[3%]"></div>
-            <BorderStruktur Jabatan="" Nama="Hendri" Width="120px" />
+            <BorderStruktur Jabatan="" Nama="" Width="120px" />
           </div>
         </div>
 
@@ -236,12 +236,12 @@ const StrukturKelas = () => {
             data-aos-duration="600"
           />
           {/* 	<img
-						src="LineHorizontal.svg"
-						alt=""
-						className="relative top-[-16.9rem] hidden lg:flex lg:w-[50px]"
-						data-aos="fade-up"
-						data-aos-duration="600"
-					/> */}
+					src="LineHorizontal.svg"
+					alt=""
+					className="relative top-[-16.9rem] hidden lg:flex lg:w-[50px]"
+					data-aos="fade-up"
+					data-aos-duration="600"
+				/> */}
 
           <img
             src="LineHorizontal.svg"
@@ -275,11 +275,11 @@ const StrukturKelas = () => {
           data-aos-duration="1100"
         >
           <div className="flex-col">
-            <BorderStruktur Jabatan="Kesehatan" Nama="Eki" Width="120px" />
+            <BorderStruktur Jabatan="Kesehatan" Nama="" Width="120px" />
           </div>
 
           <div className="flex-col">
-            <BorderStruktur Jabatan="Kesehatan" Nama="Hendri" Width="120px" />
+            <BorderStruktur Jabatan="Kesehatan" Nama="" Width="120px" />
           </div>
         </div>
 
@@ -331,11 +331,11 @@ const StrukturKelas = () => {
           data-aos-duration="1100"
         >
           <div className="flex-col">
-            <BorderStruktur Jabatan="Peralatan" Nama="Fajri" Width="120px" />
+            <BorderStruktur Jabatan="Peralatan" Nama="" Width="120px" />
           </div>
 
           <div className="flex-col">
-            <BorderStruktur Jabatan="Peralatan" Nama="Windi" Width="120px" />
+            <BorderStruktur Jabatan="Peralatan" Nama="" Width="120px" />
           </div>
         </div>
 
@@ -346,26 +346,26 @@ const StrukturKelas = () => {
             <img src="LineVertikal3.svg" alt="" className="lg:hidden" />
             <img src="Circle.svg" alt="" className="relative top-[-0.7rem]" />
             <div className="relative bottom-3">
-              <BorderStruktur Jabatan="Peralatan" Nama="Fadly" Width="120px" />
+              <BorderStruktur Jabatan="Peralatan" Nama="" Width="120px" />
             </div>
           </div>
         </div>
 
         {/* Kesehatan */}
         {/* 	<div
-					className=" absolute bottom-[14.5%] lg:hidden"
-					data-aos="fade-up"
-					data-aos-duration="1200">
-					<div className="flex justify-center items-center flex-col">
-						<img src="LineVertikal3.svg" alt="" className="lg:hidden" />
-						<img src="Circle.svg" alt="" className="relative top-[-0.7rem]" />
-						<div className="relative bottom-3">
-							<BorderStruktur Jabatan="Kesehatan" Nama="Eki" Width="120px" />
-							<div className="py-[3%]"></div>
-							<BorderStruktur Jabatan="" Nama="Hendri" Width="120px" />
-						</div>
+				className=" absolute bottom-[14.5%] lg:hidden"
+				data-aos="fade-up"
+				data-aos-duration="1200">
+				<div className="flex justify-center items-center flex-col">
+					<img src="LineVertikal3.svg" alt="" className="lg:hidden" />
+					<img src="Circle.svg" alt="" className="relative top-[-0.7rem]" />
+					<div className="relative bottom-3">
+						<BorderStruktur Jabatan="Kesehatan" Nama="Eki" Width="120px" />
+						<div className="py-[3%]"></div>
+						<BorderStruktur Jabatan="" Nama="Hendri" Width="120px" />
 					</div>
-				</div> */}
+				</div>
+			</div> */}
       </div>
     </div>
   )
