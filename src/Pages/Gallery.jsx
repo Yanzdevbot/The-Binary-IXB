@@ -10,9 +10,9 @@ import Modal from "@mui/material/Modal"
 import { IconButton } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import { useSpring, animated } from "@react-spring/web"
-import { getGitHubFile } from "../lib/github" // Import GitHub utility
+import { getGitHubFile } from "../lib/github"
 
-const Carousel = () => {
+const Carousel = ({ galleryRefreshKey }) => {
   const [images, setImages] = useState([])
   const [open, setOpen] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
@@ -26,18 +26,22 @@ const Carousel = () => {
     try {
       const { content } = await getGitHubFile("data/images.json")
       const imageData = JSON.parse(content)
-      // Sort images by timestamp in descending order (newest first)
+      /** Sort images by timestamp in descending order (newest first) */
       imageData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      setImages(imageData.map((img) => img.url)) // Extract only URLs for the carousel
+      setImages(imageData.map((img) => img.url)) /** Extract only URLs for the carousel */
     } catch (error) {
       console.error("Error fetching images from GitHub:", error)
-      setImages([]) // Ensure images is an empty array on error
+      setImages([]) /** Ensure images is an empty array on error */
     }
+  }
+
+  const handleGalleryRefresh = () => {
+    // Implement gallery refresh logic here
   }
 
   useEffect(() => {
     fetchImagesFromGitHub()
-  }, [])
+  }, [galleryRefreshKey]) /** Tambahkan galleryRefreshKey sebagai dependency */
 
   const settings = {
     centerMode: true,
@@ -104,8 +108,10 @@ const Carousel = () => {
       </div>
 
       <div className="flex justify-center items-center gap-6 text-base mt-5 lg:mt-8">
-        <ButtonSend />
-        <ButtonRequest />
+        {/* Meneruskan handleGalleryRefresh ke ButtonSend */}
+        <ButtonSend onUploadSuccess={handleGalleryRefresh} />
+        {/* Meneruskan galleryRefreshKey ke ButtonRequest */}
+        <ButtonRequest galleryRefreshKey={galleryRefreshKey} />
       </div>
 
       <Modal
