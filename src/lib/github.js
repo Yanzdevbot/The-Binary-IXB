@@ -2,8 +2,8 @@
 // WARNING: Hardcoding API key in client-side code is a security risk!
 // For production, consider a server-side proxy or environment variables.
 const GITHUB_TOKEN = "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"
-const REPO_OWNER = "your-github-username" // IMPORTANT: Replace with your GitHub username
-const REPO_NAME = "your-github-repository" // IMPORTANT: Replace with your GitHub repository name
+const REPO_OWNER = "raolbyte" // IMPORTANT: Replace with your GitHub username
+const REPO_NAME = "database" // IMPORTANT: Replace with your GitHub repository name
 
 const GITHUB_API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`
 const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/` // Assuming 'main' branch
