@@ -66,7 +66,7 @@ const Schedule = () => {
       <div className="lg:flex lg:justify-center lg:gap-32 lg:mb-10 lg:mt-16 ">
         <div className="text-white flex flex-col justify-center items-center mt-8 md:mt-3 overflow-y-hidden">
           <div className="text-2xl font-medium mb-5" data-aos="fade-up" data-aos-duration="500">
-            Jadwal Mata Pelajaran {currentDay}
+            {currentDay}
           </div>
           <div data-aos="fade-up" data-aos-duration="400">
             {TodaySubjectComponent ? (
