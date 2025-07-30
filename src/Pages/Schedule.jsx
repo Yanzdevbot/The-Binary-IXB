@@ -70,7 +70,7 @@ const Schedule = () => {
           </div>
           <div data-aos="fade-up" data-aos-duration="400">
             {TodaySubjectComponent ? (
-              <React.Suspense fallback={<p>Loading...</p>}>
+              <React.Suspense fallback={<p className="opacity-50">Loading Jadwal...</p>}>
                 <TodaySubjectComponent />
               </React.Suspense>
             ) : (
